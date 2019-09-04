@@ -22,7 +22,7 @@ setup(
     python_requires=">=3.7",
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-cov"],
-    install_requires=["yaqd-core", "pyusb"],
+    install_requires=["yaqd-core", "aiohttp"],
     extras_require={
         "docs": ["sphinx", "sphinx-gallery>=0.3.0", "sphinx-rtd-theme"],
         "dev": ["black", "pre-commit", "pydocstyle"],
