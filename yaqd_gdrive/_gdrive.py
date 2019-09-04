@@ -144,6 +144,18 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         await self._create_file(name, parent, id_=id_, mime_type="application/vnd.google-apps.folder")
 
     @refresh_oauth
+    async def _update_file(self, file_, id_):
+        with aiohttp.MultipartWriter('related') as mpwriter:
+            mpwriter.append(file_)
+            async with self._http_session.patch(
+                f"{self._update_file_url}/{id_}",
+                headers=self._auth_header,
+                params={"uploadType":"multipart"},
+                data=mpwriter,
+            ) as res:
+                return res
+
+    @refresh_oauth
     async def _generate_ids(self, count=128):
         async with self._http_session.get(
                 self._generate_ids_url,
