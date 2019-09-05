@@ -8,6 +8,8 @@ import aiohttp.web
 import yaqd_core
 
 
+UploadItem = collections.namedtuple("kind path parent client_id", defaults=[None])
+
 def refresh_oauth(func):
     @functools.wraps(func)
     async def inner(self, *args, **kwargs):
@@ -37,7 +39,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
     def __init__(self, name, config, config_filepath):
         self._http_session = aiohttp.ClientSession()
-        self._upload_queue = {}
+        self._upload_queue = []
         self._id_mapping = {}
         self._free_ids = []
         self._access_token = None
@@ -178,7 +180,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
     def _load_state(self, state):
         self._access_token = state.get("access_token")
         self._refresh_token = state.get("refresh_token")
-        self._upload_queue = state.get("upload_queue", {})
+        self._upload_queue = state.get("upload_queue", [])
         self._id_mapping = state.get("id_mapping", {})
 
     async def update_state(self):
@@ -196,7 +198,23 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
     async def _upload(self):
         while True:
             while self._upload_queue:
-                pass
+                item = self._upload_queue[0]
+                path = pathlib.Path(item.path)
+                if item.kind == "folder_create":
+                    id_ = self._id_mapping.get(item.client_id, self.free_ids.pop(0))
+                    await self._create_folder(path.name, item.parent, id_=id_)
+                elif item.kind == "folder_upload":
+                    id_ = self._id_mapping.get(item.client_id, self.free_ids.pop(0))
+                    await self._create_folder(path.name, item.parent, id_=id_)
+                    for child in path.iterdir():
+                        if child.is_dir():
+                            self._upload_queue.append(UploadItem("folder_upload", str(child), id_))
+                        else:
+                            self._upload_queue.append(UploadItem("file", str(child), id_))
+                elif item.kind == "file":
+                elif item.kind == "update":
+                self._upload_queue.pop(0)
+
             await asyncio.sleep(1)
 
 if __name__ == "__main__":
