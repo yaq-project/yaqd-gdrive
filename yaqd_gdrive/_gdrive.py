@@ -88,7 +88,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         code = await code
         await runner.cleanup()
         await self._obtain_token(code)
-        self._busy.set()
+        self._busy = True
 
     async def _obtain_token(self, code):
         async with self._http_session.post(
@@ -185,15 +185,15 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
     async def update_state(self):
         while True:
-            if self._busy.is_set():
-                self._not_busy.set()
-            await self._busy.wait()
+            if self._busy:
+                self._busy = False
+            await self._busy_sig.wait()
 
     async def _stock_ids(self):
         while True:
             if len(self._free_ids) < 32:
                 await self._generate_ids()
-            await self._not_busy.wait()
+            await self._not_busy_sig.wait()
 
     async def _upload(self):
         while True:
