@@ -35,6 +35,8 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         "create_file_url": "https://www.googleapis.com/upload/drive/v3/files",
         "generate_ids_url": "https://www.googleapis.com/drive/v3/files/generateIds",
         "update_file_url": "https://www.googleapis.com/upload/drive/v3/files/",  # Needs fileId
+        "download_url": "https://drive.google.com/uc?id=",  # Needs fileId
+        "open_url": "https://drive.google.com/open?id=",  # Needs fileId
     }
 
     def __init__(self, name, config, config_filepath):
@@ -54,6 +56,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         self._create_file_url = config["create_file_url"]
         self._generate_ids_url = config["generate_ids_url"]
         self._update_file_url = config["update_file_url"]
+        self._download_url = config["download_url"]
         self._loop.create_task(self._stock_ids())
         self._loop.create_task(self._upload())
 
@@ -88,7 +91,6 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         code = await code
         await runner.cleanup()
         await self._obtain_token(code)
-        self._busy = True
 
     async def _obtain_token(self, code):
         async with self._http_session.post(
@@ -183,28 +185,31 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         self._upload_queue = state.get("upload_queue", [])
         self._id_mapping = state.get("id_mapping", {})
 
-    async def update_state(self):
-        while True:
-            if self._busy:
-                self._busy = False
-            await self._busy_sig.wait()
-
     async def _stock_ids(self):
         while True:
             if len(self._free_ids) < 32:
                 await self._generate_ids()
-            await self._not_busy_sig.wait()
+            await asyncio.sleep(0.1)
+
+    async def _get_id(self, client_id=None):
+        id_ = self._id_mapping.get(item.client_id)
+        # Avoid popping if id is already reserved
+        if id_ is None:
+            while not self._free_ids:
+                await asyncio.sleep(0.01)
+            id_ = self._free_ids.pop(0)
+        return id_
 
     async def _upload(self):
         while True:
             while self._upload_queue:
+                self._busy = True
                 item = self._upload_queue[0]
                 path = pathlib.Path(item.path)
+                id_ = await self._get_id(item.client_id)
                 if item.kind == "folder_create":
-                    id_ = self._id_mapping.get(item.client_id, self.free_ids.pop(0))
                     await self._create_folder(path.name, item.parent, id_=id_)
                 elif item.kind == "folder_upload":
-                    id_ = self._id_mapping.get(item.client_id, self.free_ids.pop(0))
                     await self._create_folder(path.name, item.parent, id_=id_)
                     for child in path.iterdir():
                         if child.is_dir():
@@ -212,10 +217,27 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                         else:
                             self._upload_queue.append(UploadItem("file", str(child), id_))
                 elif item.kind == "file":
+                    await self._create_file(path.name, item.parent, path.open("rb"), id_=id_)
                 elif item.kind == "update":
+                    await self._update_file(path.open("rb"), id_)
                 self._upload_queue.pop(0)
-
+                self._busy = False
+                await asyncio.sleep(0.01)
             await asyncio.sleep(1)
+
+    def reserve_id(self, client_id, drive_id=None):
+        client_id = str(client_id)
+        if drive_id is None:
+            drive_id = self._loop.run_until_complete(self._get_id(client_id))
+        self._id_mapping[client_id] = drive_id
+        return drive_id
+
+    def id_to_open_url(self, id_):
+        return f"{self._open_url}{self._id_mapping.get(id_, id_)}"
+
+    def id_to_download_url(self, id_):
+        return f"{self._download_url}{self._id_mapping.get(id_, id_)}"
+
 
 if __name__ == "__main__":
     GDriveDaemon.defaults.update({"client_id":"943700362860-7fmktmg2rjrblt4v2qh86141l6vg7qju.apps.googleusercontent.com", "client_secret":"pKIjNEasosRswlt4xWOxQCpD", "root_folder_id":"1oZOabPMoTO2XPE5mWOC_9XOR9PsUgepC"})
