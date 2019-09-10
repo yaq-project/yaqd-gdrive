@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import functools
 import time
 import webbrowser
@@ -8,7 +9,7 @@ import aiohttp.web
 import yaqd_core
 
 
-UploadItem = collections.namedtuple("kind path parent client_id", defaults=[None])
+UploadItem = collections.namedtuple("UploadItem", "kind path parent client_id", defaults=[None])
 
 def refresh_oauth(func):
     @functools.wraps(func)
@@ -86,7 +87,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
         runner = aiohttp.web.AppRunner(app)
         await runner.setup()
-        site = aiohttp.web.TCPSite(runner, "localhost", port)
+        site = aiohttp.web.TCPSite(runner, "127.0.0.1", port)
         await site.start()
         code = await code
         await runner.cleanup()
@@ -182,7 +183,8 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
     def _load_state(self, state):
         self._access_token = state.get("access_token")
         self._refresh_token = state.get("refresh_token")
-        self._upload_queue = state.get("upload_queue", [])
+        upload_queue = state.get("upload_queue", [])
+        self.upload_queue = [UploadItem(*item) for item in upload_queue]
         self._id_mapping = state.get("id_mapping", {})
 
     async def _stock_ids(self):
@@ -192,7 +194,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
             await asyncio.sleep(0.1)
 
     async def _get_id(self, client_id=None):
-        id_ = self._id_mapping.get(item.client_id)
+        id_ = self._id_mapping.get(client_id)
         # Avoid popping if id is already reserved
         if id_ is None:
             while not self._free_ids:
@@ -215,10 +217,10 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                         if child.is_dir():
                             self._upload_queue.append(UploadItem("folder_upload", str(child), id_))
                         else:
-                            self._upload_queue.append(UploadItem("file", str(child), id_))
-                elif item.kind == "file":
+                            self._upload_queue.append(UploadItem("file_create", str(child), id_))
+                elif item.kind == "file_create":
                     await self._create_file(path.name, item.parent, path.open("rb"), id_=id_)
-                elif item.kind == "update":
+                elif item.kind == "file_update":
                     await self._update_file(path.open("rb"), id_)
                 self._upload_queue.pop(0)
                 self._busy = False
@@ -238,6 +240,17 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
     def id_to_download_url(self, id_):
         return f"{self._download_url}{self._id_mapping.get(id_, id_)}"
 
+    def create_folder(self, path, parent_id=None, id_=None):
+        self._upload_queue.append(UploadItem("folder_created", str(path), self._id_mapping.get(parent_id, parent_id), id_))
+
+    def upload_folder(self, path, parent_id=None, id_=None):
+        self._upload_queue.append(UploadItem("folder_upload", str(path), self._id_mapping.get(parent_id, parent_id), id_))
+
+    def create_file(self, path, parent_id=None, id_=None):
+        self._upload_queue.append(UploadItem("file_create", str(path), self._id_mapping.get(parent_id, parent_id), id_))
+
+    def update_file(self, path, id_=None):
+        self._upload_queue.append(UploadItem("file_update", str(path), None, id_))
 
 if __name__ == "__main__":
     GDriveDaemon.defaults.update({"client_id":"943700362860-7fmktmg2rjrblt4v2qh86141l6vg7qju.apps.googleusercontent.com", "client_secret":"pKIjNEasosRswlt4xWOxQCpD", "root_folder_id":"1oZOabPMoTO2XPE5mWOC_9XOR9PsUgepC"})
