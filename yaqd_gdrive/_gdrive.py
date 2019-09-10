@@ -59,6 +59,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         self._generate_ids_url = config["generate_ids_url"]
         self._update_file_url = config["update_file_url"]
         self._download_url = config["download_url"]
+        self._open_url = config["open_url"]
         self._loop.create_task(self._stock_ids())
         self._loop.create_task(self._upload())
 
@@ -205,6 +206,8 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
             while not self._free_ids:
                 await asyncio.sleep(0.01)
             id_ = self._free_ids.pop(0)
+            if client_id is not None:
+                self._id_mapping[client_id] = id_
         return id_
 
     async def _upload(self):
