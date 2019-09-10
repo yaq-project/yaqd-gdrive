@@ -2,6 +2,7 @@ import asyncio
 import collections
 import functools
 import time
+import pathlib
 import webbrowser
 
 import aiohttp
@@ -17,7 +18,7 @@ def refresh_oauth(func):
         res = await func(self, *args, **kwargs)
         if res.status == 200:
             return res
-        #self._access_token = None
+        self._access_token = None
         try:
             await self._use_refresh_token()
         except:
@@ -109,7 +110,6 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
             json = await res.json()
             self._access_token = json["access_token"]
             self._refresh_token = json["refresh_token"]
-        # TODO: Auto refresh using "expires_in"?
 
     async def _use_refresh_token(self):
         print("Refreshing token")
@@ -125,7 +125,6 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
             res.raise_for_status()
             self._access_token = (await res.json())["access_token"]
             return res
-        # TODO: Auto refresh using "expires_in"?
 
     @refresh_oauth
     async def _create_file(self, name, parent, file_=None, *, id_=None, mime_type=None):
@@ -134,7 +133,9 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         with aiohttp.MultipartWriter('related') as mpwriter:
             mpwriter.append_json({"name": name, "parents":[parent], "id":id_, "mimeType":mime_type})
             if file_ is not None:
-                mpwriter.append(file_)
+                with open(file_, "rb") as f:
+                    # NOTE: Not memory safe
+                    mpwriter.append(f.read())
             async with self._http_session.post(
                 self._create_file_url,
                 headers=self._auth_header,
@@ -142,7 +143,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                 data=mpwriter,
             ) as res:
                 print(res)
-                print(await res.json())
+                print(await res.text())
                 return res
 
     async def _create_folder(self, name, parent, *, id_=None):
@@ -151,13 +152,17 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
     @refresh_oauth
     async def _update_file(self, file_, id_):
         with aiohttp.MultipartWriter('related') as mpwriter:
-            mpwriter.append(file_)
+            mpwriter.append_json({"mimeType":None})
+            with open(file_, "rb") as f:
+                mpwriter.append(f.read())
             async with self._http_session.patch(
-                f"{self._update_file_url}/{id_}",
+                f"{self._update_file_url}{id_}",
                 headers=self._auth_header,
                 params={"uploadType":"multipart"},
                 data=mpwriter,
             ) as res:
+                print(res)
+                print(await res.text())
                 return res
 
     @refresh_oauth
@@ -184,7 +189,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         self._access_token = state.get("access_token")
         self._refresh_token = state.get("refresh_token")
         upload_queue = state.get("upload_queue", [])
-        self.upload_queue = [UploadItem(*item) for item in upload_queue]
+        self._upload_queue = [UploadItem(*[None if i == "None" else i for i in item]) for item in upload_queue]
         self._id_mapping = state.get("id_mapping", {})
 
     async def _stock_ids(self):
@@ -204,25 +209,34 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
     async def _upload(self):
         while True:
+            print("_upload", len(self._upload_queue))
             while self._upload_queue:
                 self._busy = True
-                item = self._upload_queue[0]
-                path = pathlib.Path(item.path)
-                id_ = await self._get_id(item.client_id)
-                if item.kind == "folder_create":
-                    await self._create_folder(path.name, item.parent, id_=id_)
-                elif item.kind == "folder_upload":
-                    await self._create_folder(path.name, item.parent, id_=id_)
-                    for child in path.iterdir():
-                        if child.is_dir():
-                            self._upload_queue.append(UploadItem("folder_upload", str(child), id_))
-                        else:
-                            self._upload_queue.append(UploadItem("file_create", str(child), id_))
-                elif item.kind == "file_create":
-                    await self._create_file(path.name, item.parent, path.open("rb"), id_=id_)
-                elif item.kind == "file_update":
-                    await self._update_file(path.open("rb"), id_)
-                self._upload_queue.pop(0)
+                try:
+                    item = self._upload_queue[0]
+                    path = pathlib.Path(item.path)
+                    id_ = await self._get_id(item.client_id)
+                    parent = item.parent if item.parent else self._root_folder_id
+                    if item.kind == "folder_create":
+                        await self._create_folder(path.name, parent, id_=id_)
+                    elif item.kind == "folder_upload":
+                        await self._create_folder(path.name, parent, id_=id_)
+                        for child in path.iterdir():
+                            if child.is_dir():
+                                self._upload_queue.append(UploadItem("folder_upload", str(child), id_))
+                            else:
+                                self._upload_queue.append(UploadItem("file_create", str(child), id_))
+                    elif item.kind == "file_create":
+                        print(path.name, parent, id_)
+                        await self._create_file(path.name, parent, path, id_=id_)
+                    elif item.kind == "file_update":
+                        await self._update_file(path, id_)
+                except BaseException as e:
+                    import traceback
+                    traceback.print_exc()
+                    self._upload_queue.append(self._upload_queue.pop(0))
+                else:
+                    self._upload_queue.pop(0)
                 self._busy = False
                 await asyncio.sleep(0.01)
             await asyncio.sleep(1)
@@ -230,7 +244,9 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
     def reserve_id(self, client_id, drive_id=None):
         client_id = str(client_id)
         if drive_id is None:
-            drive_id = self._loop.run_until_complete(self._get_id(client_id))
+            drive_id = self._id_mapping.get(client_id)
+            if drive_id is None:
+                drive_id = self._free_ids.pop(0)
         self._id_mapping[client_id] = drive_id
         return drive_id
 
@@ -241,7 +257,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         return f"{self._download_url}{self._id_mapping.get(id_, id_)}"
 
     def create_folder(self, path, parent_id=None, id_=None):
-        self._upload_queue.append(UploadItem("folder_created", str(path), self._id_mapping.get(parent_id, parent_id), id_))
+        self._upload_queue.append(UploadItem("folder_create", str(path), self._id_mapping.get(parent_id, parent_id), id_))
 
     def upload_folder(self, path, parent_id=None, id_=None):
         self._upload_queue.append(UploadItem("folder_upload", str(path), self._id_mapping.get(parent_id, parent_id), id_))
@@ -257,5 +273,5 @@ if __name__ == "__main__":
     gdrive = GDriveDaemon("test",GDriveDaemon.defaults, "")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(gdrive._generate_ids())
-    print(gdrive._free_ids)
+    loop.run_until_complete(gdrive._create_file("test.py", gdrive._root_folder_id, __file__))
 
