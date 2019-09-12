@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import time
 import traceback
+import os
 import pathlib
 import webbrowser
 
@@ -23,7 +24,7 @@ def refresh_oauth(func):
     @functools.wraps(func)
     async def inner(self, *args, **kwargs):
         res = await func(self, *args, **kwargs)
-        if res.status != 403:
+        if res.status != 401:
             return res
         self._access_token = None
         try:
@@ -81,7 +82,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
     async def _authorize(self):
         code = asyncio.Future()
-        port = 9004
+        port = 39202
         url = f"{self._authorization_url}?scope={'%20'.join(self._scopes)}&response_type=code&redirect_uri=http://127.0.0.1:{port}&client_id={self._client_id}"
         app = aiohttp.web.Application()
 
@@ -114,7 +115,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                 "code": code,
                 "client_id": self._client_id,
                 "client_secret": self._client_secret,
-                "redirect_uri": "http://127.0.0.1:9004",
+                "redirect_uri": "http://127.0.0.1:39202",
                 "grant_type": "authorization_code",
             },
         ) as res:
@@ -260,13 +261,18 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                         await self._create_file(item.name, parent, path, id_=id_)
                     elif item.kind == "file_update":
                         await self._update_file(path, id_)
-                    if str(path).startswith(str(self._cache_dir)):
-                        path.unlink()
+                except FileNotFoundError:
+                    self._upload_queue.pop(0)
                 except BaseException as e:
-                    import traceback
                     traceback.print_exc()
                     self._upload_queue.append(self._upload_queue.pop(0))
                 else:
+                    try:
+                        if str(path).startswith(str(self._cache_dir)):
+                            path.unlink()
+                    except FileNotFoundError:
+                        pass
+
                     self._upload_queue.pop(0)
                 self._busy = False
                 await asyncio.sleep(0.01)
@@ -279,7 +285,8 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                     item = self._copy_queue[0]._asdict()
                     path = pathlib.Path(item["path"])
                     if path.is_file():
-                        tmp = tempfile.mkstemp(prefix=path.stem, suffix=path.suffix, dir=self._cache_dir)[1]
+                        fd, tmp = tempfile.mkstemp(prefix=path.stem, suffix=path.suffix, dir=self._cache_dir)
+                        os.close(fd)
                         shutil.copy(path, tmp)
                         item["path"] = tmp
                         self._upload_queue.append(UploadItem(**item))
