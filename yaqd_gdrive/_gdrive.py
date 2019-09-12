@@ -363,6 +363,15 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
         path = pathlib.Path(path)
         self._copy_queue.append(UploadItem("file_update", path.name, str(path), None, id_))
 
+    def is_uploaded(self, id_):
+        for item in self._copy_queue:
+            if item.client_id == id_:
+                return False
+        for item in self._upload_queue:
+            if item.client_id == id_:
+                return False
+        return True
+
 
 if __name__ == "__main__":
     GDriveDaemon.defaults.update(
