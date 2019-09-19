@@ -241,7 +241,6 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
             else:
                 queue.append(UploadItem("file_create", child.name, str(child), parent_id))
 
-
     async def _upload(self):
         while True:
             print("_upload", len(self._upload_queue))
@@ -285,7 +284,9 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                     item = self._copy_queue[0]._asdict()
                     path = pathlib.Path(item["path"])
                     if path.is_file():
-                        fd, tmp = tempfile.mkstemp(prefix=path.stem, suffix=path.suffix, dir=self._cache_dir)
+                        fd, tmp = tempfile.mkstemp(
+                            prefix=path.stem, suffix=path.suffix, dir=self._cache_dir
+                        )
                         os.close(fd)
                         shutil.copy(path, tmp)
                         item["path"] = tmp
