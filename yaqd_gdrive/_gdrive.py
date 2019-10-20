@@ -14,6 +14,8 @@ import aiohttp.web
 import appdirs
 import yaqd_core
 
+logger = yaqd_core.logging.getLogger(__name__)
+logger.setLevel(yaqd_core.logging.INFO)
 
 UploadItem = collections.namedtuple(
     "UploadItem", "kind name path parent client_id", defaults=[None]
@@ -119,14 +121,14 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                 "grant_type": "authorization_code",
             },
         ) as res:
-            print(await res.text())
+            logger.debug(await res.text())
             res.raise_for_status()
             json = await res.json()
             self._access_token = json["access_token"]
             self._refresh_token = json["refresh_token"]
 
     async def _use_refresh_token(self):
-        print("Refreshing token")
+        logger.info("Refreshing token")
         async with self._http_session.post(
             self._token_url,
             json={
@@ -158,8 +160,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                 params={"uploadType": "multipart"},
                 data=mpwriter,
             ) as res:
-                print(res)
-                print(await res.text())
+                logger.debug(await res.text())
                 return res
 
     async def _create_folder(self, name, parent, *, id_=None):
@@ -179,8 +180,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                 params={"uploadType": "multipart"},
                 data=mpwriter,
             ) as res:
-                print(res)
-                print(await res.text())
+                logger.debug(await res.text())
                 return res
 
     @refresh_oauth
@@ -243,7 +243,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
     async def _upload(self):
         while True:
-            print("_upload", len(self._upload_queue))
+            logger.debug("_upload", len(self._upload_queue))
             while self._upload_queue:
                 self._busy = True
                 try:
@@ -263,7 +263,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                 except FileNotFoundError:
                     self._upload_queue.pop(0)
                 except BaseException as e:
-                    traceback.print_exc()
+                    logger.error(e)
                     self._upload_queue.append(self._upload_queue.pop(0))
                 else:
                     try:
@@ -302,7 +302,7 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
                     else:
                         self._upload_queue.append(UploadItem(**item))
                 except BaseException as e:
-                    traceback.print_exc()
+                    logger.error(e)
                     self._copy_queue.append(self._copy_queue.pop(0))
                 else:
                     self._copy_queue.pop(0)
