@@ -39,7 +39,7 @@ def refresh_oauth(func):
     return inner
 
 
-class GDriveDaemon(yaqd_core.BaseDaemon):
+class GDrive(yaqd_core.Base):
     _kind = "gdrive"
     defaults = {
         "scopes": ["https://www.googleapis.com/auth/drive.file"],
@@ -375,14 +375,14 @@ class GDriveDaemon(yaqd_core.BaseDaemon):
 
 
 if __name__ == "__main__":
-    GDriveDaemon.defaults.update(
+    GDrive.defaults.update(
         {
             "client_id": "943700362860-7fmktmg2rjrblt4v2qh86141l6vg7qju.apps.googleusercontent.com",
             "client_secret": "pKIjNEasosRswlt4xWOxQCpD",
             "root_folder_id": "1oZOabPMoTO2XPE5mWOC_9XOR9PsUgepC",
         }
     )
-    gdrive = GDriveDaemon("test", GDriveDaemon.defaults, "")
+    gdrive = GDrive("test", GDrive.defaults, "")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(gdrive._generate_ids())
     loop.run_until_complete(gdrive._create_file("test.py", gdrive._root_folder_id, __file__))

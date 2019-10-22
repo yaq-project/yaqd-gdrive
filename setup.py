@@ -33,7 +33,7 @@ setup(
     author="yaq Developers",
     license="LGPL v3",
     url="http://gitlab.com/yaq/yaqd-gdrive",
-    entry_points={"console_scripts": ["yaqd-gdrive=yaqd_gdrive._gdrive:GDriveDaemon.main"]},
+    entry_points={"console_scripts": ["yaqd-gdrive=yaqd_gdrive._gdrive:GDrive.main"]},
     keywords="spectroscopy science multidimensional hardware",
     classifiers=[
         "Development Status :: 1 - Planning",
