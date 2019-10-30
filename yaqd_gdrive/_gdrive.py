@@ -373,6 +373,11 @@ class GDrive(yaqd_core.Base):
                 return False
         return True
 
+    def close(self):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self._http_session.close())
+        super().close()
+
 
 if __name__ == "__main__":
     GDrive.defaults.update(
