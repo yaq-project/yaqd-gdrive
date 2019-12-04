@@ -13,7 +13,7 @@ def read(fname):
 with open(os.path.join(here, "yaqd_gdrive", "VERSION")) as version_file:
     version = version_file.read().strip()
 
-extra_files = {"yaqd_horiba": ["VERSION"]}
+extra_files = {"yaqd_gdrive": ["VERSION"]}
 
 setup(
     name="yaqd-gdrive",
@@ -28,20 +28,26 @@ setup(
         "dev": ["black", "pre-commit", "pydocstyle"],
     },
     version=version,
-    description="Core structures for yaq component daemons",
+    description="Google Drive yaq daemon",
     # long_description=read("README.rst"),
     author="yaq Developers",
     license="LGPL v3",
     url="http://gitlab.com/yaq/yaqd-gdrive",
+    project_urls={
+        "Source": "https://gitlab.com/yaq/yaqd-gdrive",
+        "Documentation": "https://yaq.fyi",
+        "Issue Tracker": "https://gitlab.com/yaq/yaqd-gdrive/issues",
+    },
     entry_points={"console_scripts": ["yaqd-gdrive=yaqd_gdrive._gdrive:GDrive.main"]},
     keywords="spectroscopy science multidimensional hardware",
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering",
     ],
 )
