@@ -1,1 +1,1 @@
-from _gdrive import *
+from ._gdrive import *
