@@ -11,7 +11,7 @@ import webbrowser
 
 import aiohttp
 import aiohttp.web
-import appdirs
+import appdirs  # type: ignore
 import yaqd_core
 
 logger = yaqd_core.logging.getLogger(__name__)
