@@ -253,9 +253,6 @@ class GDrive(yaqd_core.Base):
                     parent = item.parent if item.parent else self._root_folder_id
                     if item.kind == "folder_create":
                         await self._create_folder(item.name, parent, id_=id_)
-                    elif item.kind == "folder_upload":
-                        await self._create_folder(item.name, parent, id_=id_)
-                        self.dir_enqueue(path, self._upload_queue, id_)
                     elif item.kind == "file_create":
                         await self._create_file(item.name, parent, path, id_=id_)
                     elif item.kind == "file_update":
