@@ -47,9 +47,9 @@ class GDrive(yaqd_core.Base):
         "token_url": "https://www.googleapis.com/oauth2/v4/token",
         "create_file_url": "https://www.googleapis.com/upload/drive/v3/files",
         "generate_ids_url": "https://www.googleapis.com/drive/v3/files/generateIds",
-        "update_file_url": "https://www.googleapis.com/upload/drive/v3/files/",  # Needs fileId
-        "download_url": "https://drive.google.com/uc?id=",  # Needs fileId
-        "open_url": "https://drive.google.com/open?id=",  # Needs fileId
+        "update_file_url": "https://www.googleapis.com/upload/drive/v3/files/{fileId}",  # Needs fileId
+        "download_url": "https://drive.google.com/uc?id={fileId}",  # Needs fileId
+        "open_url": "https://drive.google.com/open?id={fileId}",  # Needs fileId
     }
 
     def __init__(self, name, config, config_filepath):
@@ -175,7 +175,7 @@ class GDrive(yaqd_core.Base):
             with open(file_, "rb") as f:
                 mpwriter.append(f.read())
             async with self._http_session.patch(
-                f"{self._update_file_url}{id_}",
+                self._update_file_url.format(fileId=id_),
                 headers=self._auth_header,
                 params={"uploadType": "multipart"},
                 data=mpwriter,
@@ -316,10 +316,10 @@ class GDrive(yaqd_core.Base):
         return drive_id
 
     def id_to_open_url(self, id_):
-        return f"{self._open_url}{self._id_mapping.get(id_, id_)}"
+        return self._open_url.format(fileId=self._id_mapping.get(id_, id_))
 
     def id_to_download_url(self, id_):
-        return f"{self._download_url}{self._id_mapping.get(id_, id_)}"
+        return self._download_url.format(fileId=self._id_mapping.get(id_, id_))
 
     def create_folder(self, path, parent_id=None, id_=None):
         path = pathlib.Path(path)
