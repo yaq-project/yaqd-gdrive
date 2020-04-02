@@ -9,8 +9,8 @@ import os
 import pathlib
 import webbrowser
 
-import aiohttp
-import aiohttp.web
+import aiohttp  # type: ignore
+import aiohttp.web  # type: ignore
 import appdirs  # type: ignore
 import yaqd_core
 
