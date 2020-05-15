@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 - from now on, yaqd-gdrive will use calendar based versioning
 - cleanup repository
+- Use daemon level loggers, see [YEP-106](https://yeps.yaq.fyi/106)
 
 ## [0.2.0]
 
