@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - added changelog
 - Use format strings instead of assuming concatenation
 - added mypy to precommit
+- added daemon-level version, see [YEP-105](https://yeps.yaq.fyi/105/)
 
 ### Changed
 - from now on, yaqd-gdrive will use calendar based versioning

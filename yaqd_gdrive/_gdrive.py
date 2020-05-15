@@ -14,6 +14,8 @@ import aiohttp.web  # type: ignore
 import appdirs  # type: ignore
 import yaqd_core
 
+from .__version__ import __branch__
+
 
 UploadItem = collections.namedtuple(
     "UploadItem", "kind name path parent client_id", defaults=[None]
@@ -39,6 +41,7 @@ def refresh_oauth(func):
 
 class GDrive(yaqd_core.Base):
     _kind = "gdrive"
+    _version = "1.0.0" + f"+{__branch__}" if __branch__ else ""
     defaults = {
         "scopes": ["https://www.googleapis.com/auth/drive.file"],
         "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth",
