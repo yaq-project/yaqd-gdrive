@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - cleanup repository
 - refactor gitlab-ci
 - Use daemon level loggers, see [YEP-106](https://yeps.yaq.fyi/106)
+- updated readme
 
 ## [0.2.0]
 
