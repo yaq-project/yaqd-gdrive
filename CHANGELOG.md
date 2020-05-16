@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [2020.05.0]
+
 ### Added
 - added changelog
 - Use format strings instead of assuming concatenation
@@ -33,7 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - initial release
 
-[Unreleased]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.2.0...master
+[Unreleased]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.05.0...master
+[2020.05.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.2.0...v2020.05.0
 [0.2.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.1.1...v0.2.0
 [0.1.1]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.1.0...v0.1.1
 [0.1.0]: https://gitlab.com/yaq/yaqd-gdrive/-/tags/v0.1.0
