@@ -13,12 +13,13 @@ before_script:
   - pip install -U virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - pip install -U twine
+  - pip install -U flit
   - pip install -U pytest
   - pip install -U mypy
   - pip install -U yaqd-core
   - pip install -U aiohttp
-  - pip install -e .
+  - pip install -U yaq-traits
+  - pip install .
 
 # test stage
 mypy:
@@ -30,13 +31,17 @@ entry:
   script:
     - yaqd-gdrive --version
     - yaqd-gdrive -h
+traits:
+  stage: test
+  script:
+    - yaq-traits check yaqd_gdrive/gdrive.avpr
+
 
 # deploy stage
 twine:
   stage: deploy
   script:
-    - python setup.py sdist bdist_wheel
-    - twine upload dist/*
+    - flit publish
   artifacts:
     paths:
       - dist/*

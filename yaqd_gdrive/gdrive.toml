@@ -1,0 +1,142 @@
+protocol = "gdrive"
+doc = "Upload files to a specified google drive folder"
+traits = ["is-daemon"]
+
+[links]
+source = "https://gitlab.com/yaq/yaqd-gdrive"
+bugtracker = "https://gitlab.com/yaq/yaqd-gdrive/issues"
+
+[installation]
+PyPI = "https://pypi.org/project/yaqd-gdrive"
+
+[config]
+
+[config.client_secret]
+type = "string"
+
+[config.client_id]
+type = "string"
+
+[config.root_folder_id]
+type = "string"
+
+[config.scopes]
+type = "array"
+items = "string"
+default = ["https://www.googleapis.com/auth/drive.file"]
+
+[config.authorization_url]
+type = "string"
+default = "https://accounts.google.com/o/oauth2/v2/auth"
+
+[config.token_url]
+type = "string"
+default = "https://www.googleapis.com/oauth2/v4/token"
+
+[config.create_file_url]
+type = "string"
+default = "https://www.googleapis.com/upload/drive/v3/files"
+
+[config.generate_ids_url]
+type = "string"
+default = "https://www.googleapis.com/drive/v3/files/generateIds"
+
+[config.update_file_url]
+type = "string"
+default = "https://www.googleapis.com/upload/drive/v3/files/{file_id}"
+
+[config.download_url]
+type = "string"
+default = "https://drive.google.com/uc?id={file_id}"
+
+[config.open_url]
+type = "string"
+default =  "https://drive.google.com/open?id={file_id}"
+
+[state]
+
+[state.access_token]
+type = ["null", "string"]
+default = "__null__"
+
+[state.refresh_token]
+type = ["null", "string"]
+default = "__null__"
+
+[state.upload_queue]
+type = "array"
+items = {"type"="array", "items"="string"}
+default = []
+
+[state.copy_queue]
+type = "array"
+items = {"type"="array", "items"="string"}
+default = []
+
+[state.id_mapping]
+type = "map"
+values = "string"
+default = {}
+
+[messages]
+
+[messages.reserve_id]
+doc = "Insert an id mapping into the state"
+request = [
+  {"name"="client_id", "type"="string"},
+  {"name"="drive_id", "type"=["null", "string"], "default"="__null__", "doc"="If not given use an existing id if possible or retrieve a new one."},
+]
+response = "string"
+
+[messages.id_to_open_url]
+doc = "Format an id in a url suitable to open the file."
+request = [
+  {"name"="id", "type"="string"}
+]
+response = "string"
+
+[messages.id_to_download_url]
+doc = "Format an id in a url suitable to download the file."
+request = [
+  {"name"="id", "type"="string"}
+]
+response = "string"
+
+[messages.create_folder]
+doc = "Create a new folder in the remote drive"
+request = [
+  {"name"="path", "type"="string"},
+  {"name"="parent_id", "type"=["null", "string"], "default"="__null__"},
+  {"name"="id", "type"=["null", "string"], "default"="__null__"},
+]
+
+[messages.upload_folder]
+doc = "Upload a folder and its contents, recursively, to the remote drive"
+request = [
+  {"name"="path", "type"="string"},
+  {"name"="parent_id", "type"=["null", "string"], "default"="__null__"},
+  {"name"="id", "type"=["null", "string"], "default"="__null__"},
+]
+
+[messages.create_file]
+doc = "Create a new file on the remote drive"
+request = [
+  {"name"="path", "type"="string"},
+  {"name"="parent_id", "type"=["null", "string"], "default"="__null__"},
+  {"name"="id", "type"=["null", "string"], "default"="__null__"},
+]
+
+[messages.update_file]
+doc = "Update the contents of an existing file"
+request = [
+  {"name"="path", "type"="string"},
+  {"name"="parent_id", "type"=["null", "string"], "default"="__null__"},
+  {"name"="id", "type"=["null", "string"], "default"="__null__"},
+]
+
+[messages.is_uploaded]
+doc = "Check if a particular file has been procesed and uploaded"
+request = [
+  {"name"="id", "type"="string"},
+]
+response = "boolean"
