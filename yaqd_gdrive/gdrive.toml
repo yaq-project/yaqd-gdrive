@@ -130,7 +130,6 @@ request = [
 doc = "Update the contents of an existing file"
 request = [
   {"name"="path", "type"="string"},
-  {"name"="parent_id", "type"=["null", "string"], "default"="__null__"},
   {"name"="id", "type"=["null", "string"], "default"="__null__"},
 ]
 
