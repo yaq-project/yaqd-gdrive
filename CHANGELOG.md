@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 - Signature of `update_file`
+- Variable name `file_id` when formatting urls
 
 ## [2020.05.0]
 
