@@ -167,7 +167,7 @@ class GDrive(yaqd_core.Base):
             with open(file_, "rb") as f:
                 mpwriter.append(f.read())
             async with self._http_session.patch(
-                self._update_file_url.format(fileId=id),
+                self._update_file_url.format(file_id=id),
                 headers=self._auth_header,
                 params={"uploadType": "multipart"},
                 data=mpwriter,
@@ -286,10 +286,10 @@ class GDrive(yaqd_core.Base):
         return drive_id
 
     def id_to_open_url(self, id):
-        return self._open_url.format(fileId=self._state["id_mapping"].get(id, id))
+        return self._open_url.format(file_id=self._state["id_mapping"].get(id, id))
 
     def id_to_download_url(self, id):
-        return self._download_url.format(fileId=self._state["id_mapping"].get(id, id))
+        return self._download_url.format(file_id=self._state["id_mapping"].get(id, id))
 
     def create_folder(self, path, parent_id=None, id=None):
         path = pathlib.Path(path)
