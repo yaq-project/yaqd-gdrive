@@ -38,7 +38,7 @@ traits:
 
 
 # deploy stage
-twine:
+flit:
   stage: deploy
   script:
     - flit publish
