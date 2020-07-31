@@ -5,9 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [2020.07.0]
+
 ### Fixed
 - Signature of `update_file`
 - Variable name `file_id` when formatting urls
+
+### Changed
+- Now uses Avro-RPC [YEP-107](https://yeps.yaq.fyi/107/)
+- Uses Flit for distribution
 
 ## [2020.05.0]
 
@@ -39,7 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - initial release
 
-[Unreleased]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.05.0...master
+[Unreleased]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.07.0...master
+[2020.07.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.05.0...v2020.07.0
 [2020.05.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.2.0...v2020.05.0
 [0.2.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.1.1...v0.2.0
 [0.1.1]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.1.0...v0.1.1
