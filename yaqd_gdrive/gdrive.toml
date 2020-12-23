@@ -8,6 +8,7 @@ bugtracker = "https://gitlab.com/yaq/yaqd-gdrive/issues"
 
 [installation]
 PyPI = "https://pypi.org/project/yaqd-gdrive"
+conda-forge = "https://anaconda.org/conda-forge/yaqd-gdrive"
 
 [config]
 

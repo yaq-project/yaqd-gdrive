@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- link to conda-forge as installation source for gdrive
+
 ## [2020.07.0]
 
 ### Fixed
