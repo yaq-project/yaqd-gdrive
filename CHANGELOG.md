@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+##[2021.10.0]
+
 ### Fixed
 - added forgotten config options to is-daemon: enable, log_level, and log_to_file
 
@@ -53,7 +55,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - initial release
 
-[Unreleased]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.12.0...master
+[Unreleased]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2021.10.0...master
+[2021.10.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.12.0...v2021.10.0
 [2020.12.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.07.0...v2020.12.0
 [2020.07.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v2020.05.0...v2020.07.0
 [2020.05.0]: https://gitlab.com/yaq/yaqd-gdrive/-/compare/v0.2.0...v2020.05.0
