@@ -14,7 +14,6 @@ import aiohttp.web  # type: ignore
 import appdirs  # type: ignore
 import yaqd_core
 
-
 UploadItem = collections.namedtuple(
     "UploadItem", "kind name path parent client_id", defaults=[None]
 )
